@@ -29,7 +29,8 @@ print.cf_model <- function(x, ...) {
 #'
 #' @param object A fitted model.
 #' @param newdata A data frame with the user and item columns used when
-#'   fitting (other columns are ignored).
+#'   fitting (other columns are ignored). If omitted, predictions are made
+#'   for the ratings the model was fitted on, in the order of `data`.
 #' @param clip Clip predictions to the range of the training ratings?
 #' @param ... Unused.
 #'
@@ -40,20 +41,42 @@ print.cf_model <- function(x, ...) {
 #'   To score new users of an [asvd()] model from their ratings, add them
 #'   first with [fold_in()].
 #'
-#' @return A numeric vector of predicted ratings, one per row of `newdata`.
+#'   `fitted()` and `residuals()` refer to the ratings the model was fitted
+#'   on (for a matrix `data`, its entries in the order the matrix stores
+#'   them: column-major for a base `matrix` or a `dgCMatrix`). They are not
+#'   clipped, so `sqrt(mean(residuals(fit)^2))` is the
+#'   training RMSE. `nobs()` is the number of those ratings. After
+#'   [fold_in()], they use the updated user representations but still refer
+#'   to the original ratings, and the training RMSE shown by `print()` is
+#'   recomputed to match.
+#'
+#' @return `predict()` and `fitted()`: a numeric vector of predicted
+#'   ratings, one per row of `newdata` (or per training rating).
+#'   `residuals()`: the training ratings minus the fitted values. `nobs()`:
+#'   the number of training ratings.
 #' @examples
 #' set.seed(1)
 #' d <- simulate_ratings()
 #' fit <- svdpp(d, factors = 5, epochs = 10)
 #' predict(fit, data.frame(user = c("1", "2"), item = c("3", "4")))
+#' head(fitted(fit))
+#' sqrt(mean(residuals(fit)^2)) # training RMSE
+#' nobs(fit)
 #' @export
 predict.cf_model <- function(object, newdata, clip = TRUE, ...) {
-  cols <- object$columns[c("user", "item")]
   check_flag(clip, "clip")
-  check_columns(newdata, cols, "newdata", allow_na = TRUE)
-  ## Missing ids are allowed and treated like unknown users/items.
-  u <- match(as_id(newdata[[cols[["user"]]]]), object$users, incomparables = NA)
-  i <- match(as_id(newdata[[cols[["item"]]]]), object$items, incomparables = NA)
+  if (missing(newdata) || is.null(newdata)) {
+    u <- object$train$u
+    i <- object$train$i
+  } else {
+    cols <- object$columns[c("user", "item")]
+    check_columns(newdata, cols, "newdata", allow_na = TRUE)
+    ## Missing ids are allowed and treated like unknown users/items.
+    u <- match(as_id(newdata[[cols[["user"]]]]), object$users,
+               incomparables = NA)
+    i <- match(as_id(newdata[[cols[["item"]]]]), object$items,
+               incomparables = NA)
+  }
   ok <- !is.na(u) & !is.na(i)
   pred <- object$mu +
     ifelse(is.na(u), 0, object$bu[u]) +
@@ -66,6 +89,20 @@ predict.cf_model <- function(object, newdata, clip = TRUE, ...) {
   pred
 }
 
+#' @rdname predict.cf_model
+#' @export
+fitted.cf_model <- function(object, ...) predict(object, clip = FALSE)
+
+#' @rdname predict.cf_model
+#' @export
+residuals.cf_model <- function(object, ...) {
+  object$train$r - predict(object, clip = FALSE)
+}
+
+#' @rdname predict.cf_model
+#' @export
+nobs.cf_model <- function(object, ...) length(object$train$r)
+
 #' Top-N recommendations
 #'
 #' @param object A fitted model.
@@ -76,6 +113,10 @@ predict.cf_model <- function(object, newdata, clip = TRUE, ...) {
 #'
 #' @return A data frame with columns `user`, `item`, `score` and `rank`,
 #'   sorted by user and rank. Unknown users are dropped with a warning.
+#'   `user` has the type of `users` and `item` the type of the item ids in
+#'   the training data (for example integer or factor), so the result can be
+#'   joined back onto them. For a matrix `data` without names the ids are
+#'   the row and column numbers.
 #' @examples
 #' set.seed(1)
 #' d <- simulate_ratings()
@@ -86,15 +127,14 @@ recommend <- function(object, ...) UseMethod("recommend")
 
 #' @rdname recommend
 #' @export
-recommend.cf_model <- function(object, users = object$users, n = 10L,
+recommend.cf_model <- function(object, users = object$user_ids, n = 10L,
                                exclude_rated = TRUE, ...) {
   n <- check_number(n, "n", 1, int = TRUE)
   check_flag(exclude_rated, "exclude_rated")
   if (!is.atomic(users) || !is.null(dim(users))) {
     stop("`users` must be a vector of user ids.", call. = FALSE)
   }
-  users <- as_id(users)
-  u <- match(users, object$users, incomparables = NA)
+  u <- match(as_id(users), object$users, incomparables = NA)
   if (anyNA(u)) {
     warning(sprintf("%d unknown user(s) dropped.", sum(is.na(u))), call. = FALSE)
     users <- users[!is.na(u)]
@@ -126,8 +166,9 @@ recommend.cf_model <- function(object, users = object$users, n = 10L,
     start <- start + chunk
   }
   len <- lengths(top_items)
+  top <- as.integer(unlist(top_items, use.names = FALSE))
   data.frame(user = rep(users, len),
-             item = object$items[as.integer(unlist(top_items, use.names = FALSE))],
+             item = object$item_ids[top],
              score = as.numeric(unlist(top_scores, use.names = FALSE)),
              rank = sequence(len),
              stringsAsFactors = FALSE)

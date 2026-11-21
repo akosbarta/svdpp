@@ -6,19 +6,17 @@
 \usage{
 baseline_predictor(
   data,
-  user = "user",
-  item = "item",
-  rating = "rating",
   lambda = c(user = 15, item = 10),
   maxit = 100L,
-  tol = 1e-08
+  tol = 1e-08,
+  user = "user",
+  item = "item",
+  rating = "rating"
 )
 }
 \arguments{
-\item{data}{A data frame of ratings, one row per user-item pair.}
-
-\item{user, item, rating}{Names of the user, item and rating columns. User
-and item ids can be of any type; they are matched as character strings.}
+\item{data}{Ratings: a data frame with one row per user-item pair, or a
+users x items matrix. See \emph{Input formats}.}
 
 \item{lambda}{Named numeric vector \code{c(user = , item = )} of the
 regularisation for user and item biases. The defaults (15 and 10) are
@@ -27,6 +25,11 @@ the same as Surprise's \code{BaselineOnly}.}
 \item{maxit}{Maximum number of alternating sweeps.}
 
 \item{tol}{Stop when no bias changes by more than this.}
+
+\item{user, item, rating}{Names of the user, item and rating columns of a
+data frame \code{data}. User and item ids can be of any type; they are
+matched as character strings. For a matrix \code{data} they are the column
+names the fitted model expects in \code{newdata} when predicting.}
 }
 \value{
 An object of class \code{"baseline_predictor"} (and \code{"cf_model"}).
@@ -41,6 +44,32 @@ exactly with alternating least squares. These baselines are a model in
 their own right and are also the fixed offsets \eqn{b_{uj}} used inside
 \code{\link[=asvd]{asvd()}}.
 }
+\section{Input formats}{
+
+\code{data} can be
+\itemize{
+\item a data frame in long format, one row per rating, with user, item and
+rating columns (named by \code{user}, \code{item} and \code{rating}). This is the
+natural format for rating data, which is mostly missing;
+\item a users x items \code{matrix} (or dense \pkg{Matrix}) with \code{NA} for missing
+ratings; or
+\item a users x items sparse matrix from the \pkg{Matrix} package (for
+example a \code{dgCMatrix}), in which the stored entries are the ratings and
+entries that are not stored are missing (not zero).
+}
+
+For a matrix, the row and column names are the user and item ids, or the
+row and column numbers if there are none. Every row and column is a user
+or item of the model, in matrix order, including those without ratings
+(they get zero biases and factors). The fitted model then predicts for a
+data frame with columns \code{user} and \code{item} (see \code{\link[=predict.cf_model]{predict.cf_model()}}).
+
+\code{implicit} can be a data frame with the \code{user} and \code{item} columns or a
+users x items matrix. If \code{data} is a matrix and \code{implicit} has no row
+(column) names, it must have the same rows (columns) as \code{data} and takes
+its names.
+}
+
 \examples{
 set.seed(1)
 d <- simulate_ratings()

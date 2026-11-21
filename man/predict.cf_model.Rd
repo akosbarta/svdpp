@@ -2,22 +2,35 @@
 % Please edit documentation in R/methods.R
 \name{predict.cf_model}
 \alias{predict.cf_model}
+\alias{fitted.cf_model}
+\alias{residuals.cf_model}
+\alias{nobs.cf_model}
 \title{Predict ratings from a fitted model}
 \usage{
 \method{predict}{cf_model}(object, newdata, clip = TRUE, ...)
+
+\method{fitted}{cf_model}(object, ...)
+
+\method{residuals}{cf_model}(object, ...)
+
+\method{nobs}{cf_model}(object, ...)
 }
 \arguments{
 \item{object}{A fitted model.}
 
 \item{newdata}{A data frame with the user and item columns used when
-fitting (other columns are ignored).}
+fitting (other columns are ignored). If omitted, predictions are made
+for the ratings the model was fitted on, in the order of \code{data}.}
 
 \item{clip}{Clip predictions to the range of the training ratings?}
 
 \item{...}{Unused.}
 }
 \value{
-A numeric vector of predicted ratings, one per row of \code{newdata}.
+\code{predict()} and \code{fitted()}: a numeric vector of predicted
+ratings, one per row of \code{newdata} (or per training rating).
+\code{residuals()}: the training ratings minus the fitted values. \code{nobs()}:
+the number of training ratings.
 }
 \description{
 Works for every model in the package: \code{\link[=svdpp]{svdpp()}}, \code{\link[=asvd]{asvd()}} and
@@ -30,10 +43,22 @@ the global mean: their biases and factors are taken as zero. A user seen
 only through \code{implicit} feedback is predicted from the implicit term.
 To score new users of an \code{\link[=asvd]{asvd()}} model from their ratings, add them
 first with \code{\link[=fold_in]{fold_in()}}.
+
+\code{fitted()} and \code{residuals()} refer to the ratings the model was fitted
+on (for a matrix \code{data}, its entries in the order the matrix stores
+them: column-major for a base \code{matrix} or a \code{dgCMatrix}). They are not
+clipped, so \code{sqrt(mean(residuals(fit)^2))} is the
+training RMSE. \code{nobs()} is the number of those ratings. After
+\code{\link[=fold_in]{fold_in()}}, they use the updated user representations but still refer
+to the original ratings, and the training RMSE shown by \code{print()} is
+recomputed to match.
 }
 \examples{
 set.seed(1)
 d <- simulate_ratings()
 fit <- svdpp(d, factors = 5, epochs = 10)
 predict(fit, data.frame(user = c("1", "2"), item = c("3", "4")))
+head(fitted(fit))
+sqrt(mean(residuals(fit)^2)) # training RMSE
+nobs(fit)
 }

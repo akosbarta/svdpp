@@ -1,6 +1,6 @@
 Package: svdpp
 Title: SVD++ and Asymmetric-SVD Recommender Models
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Akos", "Barta", email = "akos.barnabas.barta@wu.ac.at",
            role = c("aut", "cre", "cph"),
@@ -29,7 +29,7 @@ RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1.0)
 Imports:
-    Matrix,
+    Matrix (>= 1.5-0),
     methods,
     stats,
     utils

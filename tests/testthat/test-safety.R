@@ -102,11 +102,10 @@ test_that("malformed inputs give informative errors", {
   x <- d
   x$user <- as.complex(x$user)
   expect_error(svdpp(x), "plain vector")
-  expect_error(svdpp(as.matrix(d)), "It is a matrix")
-  expect_error(svdpp(Matrix::Matrix(diag(3), sparse = TRUE)), "It is a matrix")
+  expect_error(svdpp(as.matrix(d)), "long format")
   expect_error(svdpp(NULL), "class 'NULL'")
   expect_error(svdpp(as.list(d)), "class 'list'")
-  expect_error(svdpp(d[0, ]), "no rows")
+  expect_error(svdpp(d[0, ]), "no ratings")
   expect_error(svdpp(d, user = 1), "`user` must be a single column name")
   expect_error(svdpp(d, user = c("user", "item")), "`user` must be a single")
   expect_error(svdpp(d, user = "item"), "different columns")

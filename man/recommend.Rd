@@ -7,7 +7,7 @@
 \usage{
 recommend(object, ...)
 
-\method{recommend}{cf_model}(object, users = object$users, n = 10L, exclude_rated = TRUE, ...)
+\method{recommend}{cf_model}(object, users = object$user_ids, n = 10L, exclude_rated = TRUE, ...)
 }
 \arguments{
 \item{object}{A fitted model.}
@@ -23,6 +23,10 @@ recommend(object, ...)
 \value{
 A data frame with columns \code{user}, \code{item}, \code{score} and \code{rank},
 sorted by user and rank. Unknown users are dropped with a warning.
+\code{user} has the type of \code{users} and \code{item} the type of the item ids in
+the training data (for example integer or factor), so the result can be
+joined back onto them. For a matrix \code{data} without names the ids are
+the row and column numbers.
 }
 \description{
 Top-N recommendations

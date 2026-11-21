@@ -6,30 +6,25 @@
 \usage{
 asvd(
   data,
-  user = "user",
-  item = "item",
-  rating = "rating",
-  implicit = NULL,
   factors = 20L,
   method = c("sgd", "lbfgs"),
   lambda = NULL,
+  implicit = NULL,
   lr = 0.002,
   epochs = 30L,
   shuffle = TRUE,
   maxit = 300L,
   init_sd = 0.1,
   baseline_lambda = c(user = 15, item = 10),
+  user = "user",
+  item = "item",
+  rating = "rating",
   verbose = FALSE
 )
 }
 \arguments{
-\item{data}{A data frame of ratings, one row per user-item pair.}
-
-\item{user, item, rating}{Names of the user, item and rating columns. User
-and item ids can be of any type; they are matched as character strings.}
-
-\item{implicit}{Optional data frame of extra implicit feedback, with the
-same \code{user} and \code{item} columns. These items are added to \eqn{N(u)}.}
+\item{data}{Ratings: a data frame with one row per user-item pair, or a
+users x items matrix. See \emph{Input formats}.}
 
 \item{factors}{Number of latent factors.}
 
@@ -37,6 +32,10 @@ same \code{user} and \code{item} columns. These items are added to \eqn{N(u)}.}
 
 \item{lambda}{Regularisation strength. \code{NULL} uses the default for
 \code{method}.}
+
+\item{implicit}{Optional extra implicit feedback, added to \eqn{N(u)}:
+a data frame with the \code{user} and \code{item} columns, or a users x items
+logical or numeric matrix whose non-zero (\code{TRUE}) entries mark feedback.}
 
 \item{lr}{SGD learning rate.}
 
@@ -51,6 +50,11 @@ factor matrices. Biases start at zero.}
 
 \item{baseline_lambda}{Regularisation of the fixed baseline estimates
 \eqn{b_{uj}}, passed to \code{\link[=baseline_predictor]{baseline_predictor()}}.}
+
+\item{user, item, rating}{Names of the user, item and rating columns of a
+data frame \code{data}. User and item ids can be of any type; they are
+matched as character strings. For a matrix \code{data} they are the column
+names the fitted model expects in \code{newdata} when predicting.}
 
 \item{verbose}{Print progress?}
 }
@@ -92,6 +96,32 @@ Netflix settings: 30 epochs, \code{lr = 0.002}, \code{lambda = 0.04}.
   \lambda \|\theta\|^2} with L-BFGS-B and a sparse-matrix gradient, as in
 \code{\link[=svdpp]{svdpp()}}. Default \code{lambda = 20}; choose it on validation data.
 }
+}
+
+\section{Input formats}{
+
+\code{data} can be
+\itemize{
+\item a data frame in long format, one row per rating, with user, item and
+rating columns (named by \code{user}, \code{item} and \code{rating}). This is the
+natural format for rating data, which is mostly missing;
+\item a users x items \code{matrix} (or dense \pkg{Matrix}) with \code{NA} for missing
+ratings; or
+\item a users x items sparse matrix from the \pkg{Matrix} package (for
+example a \code{dgCMatrix}), in which the stored entries are the ratings and
+entries that are not stored are missing (not zero).
+}
+
+For a matrix, the row and column names are the user and item ids, or the
+row and column numbers if there are none. Every row and column is a user
+or item of the model, in matrix order, including those without ratings
+(they get zero biases and factors). The fitted model then predicts for a
+data frame with columns \code{user} and \code{item} (see \code{\link[=predict.cf_model]{predict.cf_model()}}).
+
+\code{implicit} can be a data frame with the \code{user} and \code{item} columns or a
+users x items matrix. If \code{data} is a matrix and \code{implicit} has no row
+(column) names, it must have the same rows (columns) as \code{data} and takes
+its names.
 }
 
 \examples{

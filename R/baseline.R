@@ -9,6 +9,7 @@
 #' their own right and are also the fixed offsets \eqn{b_{uj}} used inside
 #' [asvd()].
 #'
+#' @inheritSection svdpp Input formats
 #' @inheritParams svdpp
 #' @param lambda Named numeric vector `c(user = , item = )` of the
 #'   regularisation for user and item biases. The defaults (15 and 10) are
@@ -24,10 +25,10 @@
 #' fit
 #' head(predict(fit, d))
 #' @export
-baseline_predictor <- function(data, user = "user", item = "item",
-                               rating = "rating",
-                               lambda = c(user = 15, item = 10),
-                               maxit = 100L, tol = 1e-8) {
+baseline_predictor <- function(data, lambda = c(user = 15, item = 10),
+                               maxit = 100L, tol = 1e-8,
+                               user = "user", item = "item",
+                               rating = "rating") {
   lambda <- check_baseline_lambda(lambda, "lambda")
   maxit <- check_number(maxit, "maxit", 1, int = TRUE)
   tol <- check_number(tol, "tol", 0)
@@ -49,10 +50,12 @@ fit_baseline <- function(d, lambda, maxit = 100L, tol = 1e-8) {
   nI <- tabulate(d$i, d$ni)
   bu <- numeric(d$nu)
   bi <- numeric(d$ni)
+  den_i <- bias_denominator(lambda[["item"]], nI)
+  den_u <- bias_denominator(lambda[["user"]], nU)
   it <- 0L
   for (it in seq_len(maxit)) {
-    bi_new <- group_sum(d$r - mu - bu[d$u], d$i, d$ni) / (lambda[["item"]] + nI)
-    bu_new <- group_sum(d$r - mu - bi_new[d$i], d$u, d$nu) / (lambda[["user"]] + nU)
+    bi_new <- group_sum(d$r - mu - bu[d$u], d$i, d$ni) / den_i
+    bu_new <- group_sum(d$r - mu - bi_new[d$i], d$u, d$nu) / den_u
     delta <- max(abs(bi_new - bi), abs(bu_new - bu))
     bi <- bi_new
     bu <- bu_new
@@ -61,7 +64,22 @@ fit_baseline <- function(d, lambda, maxit = 100L, tol = 1e-8) {
   list(mu = mu, bu = bu, bi = bi, iterations = it)
 }
 
+## lambda + n for the regularised bias means. With lambda = 0, users or
+## items without ratings (seen only in implicit feedback or in an empty
+## matrix row) would give 0 / 0; their numerator is 0, so divide by 1 and
+## give them a bias of 0.
+bias_denominator <- function(lambda, n) {
+  den <- lambda + n
+  den[den == 0] <- 1
+  den
+}
+
 check_baseline_lambda <- function(lambda, name = "baseline_lambda") {
+  if (is.character(lambda)) {
+    stop(sprintf(paste0("`%s` must be c(user = , item = ) with non-negative ",
+                        "values, not a string. %s"), name, positional_hint()),
+         call. = FALSE)
+  }
   if (!is.numeric(lambda) || length(lambda) != 2L || anyNA(lambda) ||
       any(!is.finite(lambda)) || any(lambda < 0) || is.null(names(lambda)) ||
       !setequal(names(lambda), c("user", "item"))) {

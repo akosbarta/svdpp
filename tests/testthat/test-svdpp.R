@@ -76,7 +76,7 @@ test_that("implicit feedback adds users and items", {
 })
 
 test_that("input validation", {
-  expect_error(svdpp(as.matrix(train)), "data frame")
+  expect_error(svdpp(as.matrix(train)), "long format")
   expect_error(svdpp(train, user = "x"), "not found")
   expect_error(svdpp(rbind(train, train[1, ])), "more than one rating")
   bad <- train

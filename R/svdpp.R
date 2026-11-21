@@ -32,21 +32,47 @@
 #' predictions use only the implicit term. Items with no ratings get
 #' \eqn{q_i = 0}, \eqn{b_i = 0}.
 #'
-#' @param data A data frame of ratings, one row per user-item pair.
-#' @param user,item,rating Names of the user, item and rating columns. User
-#'   and item ids can be of any type; they are matched as character strings.
-#' @param implicit Optional data frame of extra implicit feedback, with the
-#'   same `user` and `item` columns. These items are added to \eqn{N(u)}.
+#' @section Input formats:
+#' `data` can be
+#' * a data frame in long format, one row per rating, with user, item and
+#'   rating columns (named by `user`, `item` and `rating`). This is the
+#'   natural format for rating data, which is mostly missing;
+#' * a users x items `matrix` (or dense \pkg{Matrix}) with `NA` for missing
+#'   ratings; or
+#' * a users x items sparse matrix from the \pkg{Matrix} package (for
+#'   example a `dgCMatrix`), in which the stored entries are the ratings and
+#'   entries that are not stored are missing (not zero).
+#'
+#' For a matrix, the row and column names are the user and item ids, or the
+#' row and column numbers if there are none. Every row and column is a user
+#' or item of the model, in matrix order, including those without ratings
+#' (they get zero biases and factors). The fitted model then predicts for a
+#' data frame with columns `user` and `item` (see [predict.cf_model()]).
+#'
+#' `implicit` can be a data frame with the `user` and `item` columns or a
+#' users x items matrix. If `data` is a matrix and `implicit` has no row
+#' (column) names, it must have the same rows (columns) as `data` and takes
+#' its names.
+#'
+#' @param data Ratings: a data frame with one row per user-item pair, or a
+#'   users x items matrix. See *Input formats*.
 #' @param factors Number of latent factors.
 #' @param method Estimator, `"sgd"` or `"lbfgs"`. See *Estimators*.
 #' @param lambda Regularisation strength. `NULL` uses the default for
 #'   `method`.
+#' @param implicit Optional extra implicit feedback, added to \eqn{N(u)}:
+#'   a data frame with the `user` and `item` columns, or a users x items
+#'   logical or numeric matrix whose non-zero (`TRUE`) entries mark feedback.
 #' @param lr SGD learning rate.
 #' @param epochs Number of SGD passes over the data.
 #' @param shuffle Visit users in a random order in each SGD epoch?
 #' @param maxit Maximum number of L-BFGS-B iterations.
 #' @param init_sd Standard deviation of the normal initialisation of the
 #'   factor matrices. Biases start at zero.
+#' @param user,item,rating Names of the user, item and rating columns of a
+#'   data frame `data`. User and item ids can be of any type; they are
+#'   matched as character strings. For a matrix `data` they are the column
+#'   names the fitted model expects in `newdata` when predicting.
 #' @param verbose Print progress?
 #'
 #' @return An object of class `"svdpp"` (and `"cf_model"`), a list with the
@@ -69,16 +95,23 @@
 #' fit
 #' sqrt(mean((predict(fit, test) - test$rating)^2))
 #'
-#' fit2 <- svdpp(d[-(1:400), ], factors = 5, method = "lbfgs")
+#' fit2 <- svdpp(d[-(1:400), ], 5, "lbfgs")
 #' sqrt(mean((predict(fit2, test) - test$rating)^2))
+#'
+#' # A users x items matrix with NA for missing ratings
+#' m <- matrix(NA, 4, 3, dimnames = list(paste0("u", 1:4), c("a", "b", "c")))
+#' m[cbind(c(1, 1, 2, 3, 3, 4), c(1, 2, 2, 1, 3, 3))] <- c(5, 3, 4, 2, 5, 1)
+#' fit3 <- svdpp(m, factors = 2, epochs = 50)
+#' predict(fit3, data.frame(user = "u2", item = "c"))
 #' @export
-svdpp <- function(data, user = "user", item = "item", rating = "rating",
-                  implicit = NULL, factors = 20L,
-                  method = c("sgd", "lbfgs"), lambda = NULL,
+svdpp <- function(data, factors = 20L, method = c("sgd", "lbfgs"),
+                  lambda = NULL, implicit = NULL,
                   lr = 0.007, epochs = 20L, shuffle = TRUE,
-                  maxit = 300L, init_sd = 0.1, verbose = FALSE) {
-  method <- match.arg(method)
+                  maxit = 300L, init_sd = 0.1,
+                  user = "user", item = "item", rating = "rating",
+                  verbose = FALSE) {
   factors <- check_factors(factors)
+  method <- match.arg(method)
   lambda <- check_lambda(if (is.null(lambda)) {
     if (method == "sgd") 0.02 else 20
   } else lambda)

@@ -14,7 +14,7 @@ authors:
     given-names: Akos
     email: akos.barnabas.barta@wu.ac.at
     orcid: "https://orcid.org/0009-0009-2933-3902"
-version: 0.1.0
+version: 0.2.0
 license: MIT
 repository-code: "https://github.com/akosbarta/svdpp"
 url: "https://github.com/akosbarta/svdpp"

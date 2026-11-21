@@ -28,6 +28,7 @@
 #'   \lambda \|\theta\|^2} with L-BFGS-B and a sparse-matrix gradient, as in
 #'   [svdpp()]. Default `lambda = 20`; choose it on validation data.
 #'
+#' @inheritSection svdpp Input formats
 #' @inheritParams svdpp
 #' @param lr SGD learning rate.
 #' @param epochs Number of SGD passes over the data.
@@ -56,15 +57,15 @@
 #' fit
 #' sqrt(mean((predict(fit, test) - test$rating)^2))
 #' @export
-asvd <- function(data, user = "user", item = "item", rating = "rating",
-                 implicit = NULL, factors = 20L,
-                 method = c("sgd", "lbfgs"), lambda = NULL,
+asvd <- function(data, factors = 20L, method = c("sgd", "lbfgs"),
+                 lambda = NULL, implicit = NULL,
                  lr = 0.002, epochs = 30L, shuffle = TRUE,
                  maxit = 300L, init_sd = 0.1,
                  baseline_lambda = c(user = 15, item = 10),
+                 user = "user", item = "item", rating = "rating",
                  verbose = FALSE) {
-  method <- match.arg(method)
   factors <- check_factors(factors)
+  method <- match.arg(method)
   lambda <- check_lambda(if (is.null(lambda)) {
     if (method == "sgd") 0.04 else 20
   } else lambda)
@@ -237,9 +238,12 @@ lbfgs_asvd <- function(d, w, k, lambda, maxit, init_sd, verbose) {
 #' the items they rated.
 #'
 #' @param object A fitted model.
-#' @param data A data frame with the user, item and rating columns used when
-#'   fitting. For each user in `data`, it must hold all of that user's
-#'   ratings: it replaces what the model knew about them.
+#' @param data The new ratings: a data frame with the user, item and rating
+#'   columns used when fitting, or a users x items matrix as accepted by
+#'   [asvd()]. A matrix needs row names (the ids of the users to add or
+#'   update); its column names, or else column numbers, are item ids. For
+#'   each user in `data`, it must hold all of that user's ratings: it
+#'   replaces what the model knew about them.
 #' @param implicit Optional extra implicit feedback, as in [asvd()].
 #' @param ... Unused.
 #'
@@ -267,6 +271,15 @@ fold_in <- function(object, ...) UseMethod("fold_in")
 #' @export
 fold_in.asvd <- function(object, data, implicit = NULL, ...) {
   cols <- object$columns
+  if (is_rating_matrix(implicit)) {
+    if (is_rating_matrix(data)) implicit <- align_implicit(implicit, data)
+    check_fold_in_matrix(implicit, "implicit")
+    implicit <- matrix_to_long(implicit, cols, "implicit", value = FALSE)
+  }
+  if (is_rating_matrix(data)) {
+    check_fold_in_matrix(data, "data")
+    data <- matrix_to_long(data, cols, "data")
+  }
   check_columns(data, cols, "data")
   du <- as_id(data[[cols[["user"]]]])
   di <- match(as_id(data[[cols[["item"]]]]), object$items)
@@ -284,6 +297,12 @@ fold_in.asvd <- function(object, data, implicit = NULL, ...) {
                     unknown), call. = FALSE)
   }
   ulev <- unique(c(du, iu))
+  all_ids <- if (is.null(implicit)) {
+    data[[cols[["user"]]]]
+  } else {
+    combine_ids(data[[cols[["user"]]]], implicit[[cols[["user"]]]])
+  }
+  uval <- all_ids[match(ulev, c(du, iu))]
   keep <- !is.na(di)
   u <- match(du[keep], ulev)
   i <- di[keep]
@@ -296,7 +315,8 @@ fold_in.asvd <- function(object, data, implicit = NULL, ...) {
   nn <- length(ulev)
   b <- object$baseline
   n_r <- tabulate(u, nn)
-  bu_base <- group_sum(r - b$mu - b$bi[i], u, nn) / (b$lambda[["user"]] + n_r)
+  bu_base <- group_sum(r - b$mu - b$bi[i], u, nn) /
+    bias_denominator(b$lambda[["user"]], n_r)
   w <- (r - b$mu - bu_base[u] - b$bi[i]) / sqrt(n_r[u])
   Rw <- sparseMatrix(i = u, j = i, x = w, dims = c(nn, ni))
   ki <- !is.na(ii)
@@ -326,8 +346,21 @@ fold_in.asvd <- function(object, data, implicit = NULL, ...) {
   object$U <- U
   object$bu <- bu
   object$users <- users
+  object$user_ids <- combine_ids(object$user_ids, uval[is_new])
+  ## Keep the printed training RMSE consistent with residuals().
+  object$train_rmse <- sqrt(mean(residuals(object)^2))
   object$baseline <- b
   object
+}
+
+## In fold_in() the rows of a matrix are new or updated users: row numbers
+## would be matched against the model's user ids, so names are required.
+check_fold_in_matrix <- function(m, arg) {
+  if (is.null(rownames(m))) {
+    stop(sprintf(paste0("A matrix `%s` passed to fold_in() needs row names: ",
+                        "they are the ids of the users to add or update."),
+                 arg), call. = FALSE)
+  }
 }
 
 #' @rdname fold_in

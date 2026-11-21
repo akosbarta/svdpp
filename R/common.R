@@ -20,7 +20,21 @@ check_flag <- function(x, name) {
   x
 }
 
-check_factors <- function(factors) check_number(factors, "factors", 1, int = TRUE)
+check_factors <- function(factors) {
+  if (is.character(factors)) {
+    stop(sprintf("`factors` must be a single whole number >= 1, not a string. %s",
+                 positional_hint()), call. = FALSE)
+  }
+  check_number(factors, "factors", 1, int = TRUE)
+}
+
+## Calls written for svdpp 0.1.0, such as svdpp(d, "u", "i", "r"), now pass
+## column names to `factors` (or `lambda`); say why.
+positional_hint <- function() {
+  paste0("Since svdpp 0.2.0 the column names come after the model ",
+         "arguments; give them by name, e.g. user = \"u\", item = \"i\", ",
+         "rating = \"r\".")
+}
 
 check_lambda <- function(lambda) check_number(lambda, "lambda", 0)
 
@@ -79,6 +93,8 @@ new_cf_model <- function(class, d, mu, bu, bi, Q, U, extra, columns, call,
     c(list(mu = mu, bu = bu, bi = bi, Q = Q, U = U),
       extra,
       list(users = d$users, items = d$items,
+           user_ids = d$user_ids, item_ids = d$item_ids,
+           train = list(u = d$u, i = d$i, r = d$r),
            rated = rated_matrix(d$i, d$u, d$ni, d$nu),
            rating_range = range(d$r), columns = columns,
            train_rmse = sqrt(mean((d$r - pred)^2)),

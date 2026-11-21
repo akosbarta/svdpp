@@ -14,4 +14,5 @@
 #' @keywords internal
 #' @importFrom Matrix sparseMatrix Diagonal t crossprod rowSums colSums
 #' @importFrom methods as
+#' @importFrom stats predict fitted residuals nobs
 "_PACKAGE"

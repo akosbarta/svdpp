@@ -44,6 +44,20 @@ a <- fold_in(a, data.frame(user = "new", item = c(1, 2, 3), rating = c(5, 4, 1))
 recommend(a, users = "new", n = 5)
 ```
 
+Ratings can be a long data frame (one row per rating, as above) or a
+users x items matrix: a base `matrix` with `NA` for missing ratings, or a
+sparse `Matrix` (e.g. `dgCMatrix`) whose stored entries are the ratings.
+Row and column names become the user and item ids.
+
+```r
+m <- matrix(c(5, NA, 3,
+              4, 2, NA,
+              NA, 1, 5), nrow = 3, byrow = TRUE,
+            dimnames = list(c("ann", "bob", "cy"), c("a", "b", "c")))
+fit <- svdpp(m, 2, epochs = 50)
+predict(fit, data.frame(user = "ann", item = "b"))
+```
+
 ## Estimators
 
 Both latent factor models have two estimators.

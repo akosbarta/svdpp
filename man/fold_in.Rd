@@ -17,9 +17,12 @@ fold_in(object, ...)
 
 \item{...}{Unused.}
 
-\item{data}{A data frame with the user, item and rating columns used when
-fitting. For each user in \code{data}, it must hold all of that user's
-ratings: it replaces what the model knew about them.}
+\item{data}{The new ratings: a data frame with the user, item and rating
+columns used when fitting, or a users x items matrix as accepted by
+\code{\link[=asvd]{asvd()}}. A matrix needs row names (the ids of the users to add or
+update); its column names, or else column numbers, are item ids. For
+each user in \code{data}, it must hold all of that user's ratings: it
+replaces what the model knew about them.}
 
 \item{implicit}{Optional extra implicit feedback, as in \code{\link[=asvd]{asvd()}}.}
 }
