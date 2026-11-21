@@ -1,0 +1,38 @@
+Package: svdpp
+Title: SVD++ and Asymmetric-SVD Recommender Models
+Version: 0.1.0
+Authors@R:
+    person("Akos", "Barta", email = "akos.barnabas.barta@wu.ac.at",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0009-0009-2933-3902"))
+Description: Latent factor models for collaborative filtering from
+    Koren (2008) <doi:10.1145/1401890.1401944>. SVD++ extends matrix
+    factorisation in the style of the singular value decomposition (SVD)
+    with implicit feedback; Asymmetric-SVD represents users only through
+    the items they rated and can score new users without refitting; and the
+    regularised baseline predictor models user and item biases. The models
+    are written in R without compiled code. Each can be estimated by
+    stochastic gradient descent, with the implicit-feedback updates grouped
+    per user so that an epoch costs time linear in the number of ratings,
+    or by full-batch optimisation with the limited-memory
+    Broyden-Fletcher-Goldfarb-Shanno method with box constraints
+    (L-BFGS-B), with gradients computed by sparse matrix algebra. Includes rating prediction, top-N
+    recommendation, simulated data, and a helper to download the
+    'MovieLens' data sets.
+License: MIT + file LICENSE
+URL: https://github.com/akosbarta/svdpp
+BugReports: https://github.com/akosbarta/svdpp/issues
+Encoding: UTF-8
+Language: en-GB
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1.0)
+Imports:
+    Matrix,
+    methods,
+    stats,
+    utils
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

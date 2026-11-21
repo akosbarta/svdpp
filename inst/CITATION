@@ -1,0 +1,29 @@
+bibentry(
+  bibtype = "Manual",
+  title = "{svdpp}: {SVD++} and {Asymmetric-SVD} Recommender Models",
+  author = person("Akos", "Barta"),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/akosbarta/svdpp",
+  textVersion = paste0(
+    "Barta, A. (2026). svdpp: SVD++ and Asymmetric-SVD Recommender Models. ",
+    "R package version ", meta$Version, ". https://github.com/akosbarta/svdpp")
+)
+
+bibentry(
+  bibtype = "InProceedings",
+  title = "Factorization Meets the Neighborhood: A Multifaceted Collaborative Filtering Model",
+  author = person("Yehuda", "Koren"),
+  booktitle = "Proceedings of the 14th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining",
+  series = "KDD '08",
+  year = "2008",
+  pages = "426--434",
+  publisher = "ACM",
+  address = "New York, NY, USA",
+  doi = "10.1145/1401890.1401944",
+  textVersion = paste0(
+    "Koren, Y. (2008). Factorization meets the neighborhood: a multifaceted ",
+    "collaborative filtering model. In Proceedings of the 14th ACM SIGKDD ",
+    "International Conference on Knowledge Discovery and Data Mining ",
+    "(KDD '08), pp. 426-434. ACM. https://doi.org/10.1145/1401890.1401944")
+)

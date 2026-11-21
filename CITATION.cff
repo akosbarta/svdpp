@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it as below. Please also cite
+  Koren (2008), whose models it implements.
+type: software
+title: "svdpp: SVD++ and Asymmetric-SVD Recommender Models"
+abstract: >-
+  Latent factor models for collaborative filtering from Koren (2008):
+  SVD++, Asymmetric-SVD and the regularised baseline predictor, written in
+  R without compiled code, estimated by stochastic gradient descent or
+  L-BFGS-B with sparse-matrix gradients.
+authors:
+  - family-names: Barta
+    given-names: Akos
+    email: akos.barnabas.barta@wu.ac.at
+    orcid: "https://orcid.org/0009-0009-2933-3902"
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/akosbarta/svdpp"
+url: "https://github.com/akosbarta/svdpp"
+keywords:
+  - R
+  - recommender systems
+  - collaborative filtering
+  - matrix factorization
+  - SVD++
+  - Asymmetric-SVD
+  - implicit feedback
+references:
+  - type: conference-paper
+    title: >-
+      Factorization Meets the Neighborhood: A Multifaceted Collaborative
+      Filtering Model
+    authors:
+      - family-names: Koren
+        given-names: Yehuda
+    collection-title: >-
+      Proceedings of the 14th ACM SIGKDD International Conference on
+      Knowledge Discovery and Data Mining (KDD '08)
+    year: 2008
+    start: 426
+    end: 434
+    publisher:
+      name: ACM
+    doi: 10.1145/1401890.1401944

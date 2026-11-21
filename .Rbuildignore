@@ -1,0 +1,13 @@
+^LICENSE\.md$
+^README\.md$
+^bench$
+^base_paper\.pdf$
+^\.gitignore$
+^.*\.Rproj$
+^\.Rproj\.user$
+^svdpp\.Rcheck$
+^svdpp_.*\.tar\.gz$
+^cran-comments\.md$
+^\.github$
+^CRAN-SUBMISSION$
+^CITATION\.cff$

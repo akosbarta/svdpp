@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.DS_Store
+svdpp.Rcheck/
+svdpp_*.tar.gz
+bench/data/
+bench/results/
+bench/.venv/
+base_paper.pdf
